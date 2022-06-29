@@ -293,8 +293,29 @@ class BarberController extends Controller
     public function setAppointment($id, Request $request) {
 
         //service, year, month, day, hour
-
         $array = ['error'=>''];
+
+        $service = $request->input('service');
+        $year = intval($request->input('year'));
+        $month = intval($request->input('month'));
+        $day = intval($request->input('day'));
+        $hour = intval($request->input('hour'));
+
+        $month = ($month < 10) ? '0'.$month : $month;
+        $day = ($day < 10) ? '0'.$day : $day;
+        $hour = ($hour < 10) ? '0'.$hour : $hour;
+
+        // 1. Verificar se o serviço do barbeiro existe.
+
+        $barber = BarberServices::select()
+            ->where('id', $service)
+            ->where('id_barber', $id)
+        ->first();
+
+        // 2. Verificar se a data é real.
+        // 3. Verificar se o barbeiro já possui agendamento neste dia/hora.
+        // 4. Verificar se o barbeiro atende nesta data/hora.
+        // 5. Fazer o agendamento.
 
         return $array;
 
