@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Models\UserFavorite;
+use App\Models\Barber;
+
 class UserController extends Controller
 {
     private $loggedUser;
@@ -22,5 +25,38 @@ class UserController extends Controller
         $array['data'] = $info;
 
         return $array;
+    }
+
+    public function toggleFavorite(Request $request) {
+        $array = ['error'=>''];
+
+        $id_barber = $request->input('barber');
+
+        $barber = Barber::find($id_barber);
+
+        if($barber) {
+            $fav = UserFavorite::select()
+            ->where('id_user', $this->loggedUser->id)
+            ->where('id_barber', $id_barber)
+            ->first();
+
+            if($fav) {
+                // remover
+                $fav->delete();
+                $array['have'] = false;
+            } else {
+                // adicionar
+                $newFav = new UserFavorite();
+                $newFav->id_user = $this->loggedUser->id;
+                $newFav->id_barber = $id_barber;
+                $newFav->save();
+                $array['have'] = true;
+            }
+        } else {
+            $array['error'] = 'Barbeiro Inexistente.';
+        }
+
+        return $array;
+
     }
 }
