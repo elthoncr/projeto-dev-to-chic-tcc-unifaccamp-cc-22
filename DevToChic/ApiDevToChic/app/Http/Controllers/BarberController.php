@@ -306,19 +306,54 @@ class BarberController extends Controller
         $hour = ($hour < 10) ? '0'.$hour : $hour;
 
         // 1. Verificar se o serviço do barbeiro existe.
-
-        $barber = BarberServices::select()
+        $barberservice = BarberServices::select()
             ->where('id', $service)
             ->where('id_barber', $id)
         ->first();
-
+        if($barberservice) {
         // 2. Verificar se a data é real.
-        // 3. Verificar se o barbeiro já possui agendamento neste dia/hora.
-        // 4. Verificar se o barbeiro atende nesta data/hora.
-        // 5. Fazer o agendamento.
+        $apDate = $year.'-'.$month.'-'.$day.' '.$hour.':00:00';
+        if(strtotime($apDate) > 0) {
+            // 3. Verificar se o barbeiro já possui agendamento neste dia/hora.
+            $apps = UserAppointment::select()
+                ->where('id_barber', $id)
+                ->where('ap_datetime', $apDate)
+                ->count();
+                if ($apps == 0) {
+                    // 4.1 Verificar se o barbeiro atende nesta data/hora.
+                    $weekday = date('w', strtotime($apDate));
+                    $avail = BarberAvailability::select()
+                        ->where('id_barber', $id)
+                        ->where('weekday', $weekday)
+                    ->first();
+                    if($avail) {
+                        // 4.2 Verificar se o barbeiro atende nesta data/hora.
+                        $hours = explode(',', $avail['hours']);
+                        if(in_array($hour.':00', $hours)) {
+                            // 5. Fazer o agendamento.
+                            $newApp = new UserAppointment();
+                            $newApp->id_user = $this->loggedUser->id;
+                            $newApp->id_barber = $id;
+                            $newApp->id_service = $service;
+                            $newApp->ap_datetime = $apDate;
+                            $newApp->save();
+                        } else {
+                            $array['error'] = 'Barbeiro não atende nesta hora.';
+                        }
+                    } else {
+                        $array['error'] = 'Barbeiro não atende neste dia';
+                    }
 
+                } else {
+                    $array['error'] = 'Barbeiro já possui agendamento neste dia/hora';
+                }
+            } else {
+                $array['error'] = 'Data inexistente';
+            }
+        } else {
+            $array['error'] = 'Serviço inexistente';
+        }
         return $array;
-
     }
 
 }
